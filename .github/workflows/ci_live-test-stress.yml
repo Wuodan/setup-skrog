@@ -1,0 +1,60 @@
+name: "CI: setup-skrog stress test"
+run-name: "Skrog ${{ inputs.version }} stress test (${{ inputs.samples }} samples)"
+
+"on":
+  workflow_dispatch:
+    inputs:
+      samples:
+        description: Number of setup-skrog attempts to run (max 256)
+        required: false
+        default: 256
+        type: number
+      version:
+        description: Skrog release version to install
+        required: false
+        default: "0.10.0"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow_ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare-matrix:
+    name: Prepare stress-test matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate.outputs.matrix }}
+    steps:
+      - name: Generate test matrix
+        id: generate
+        env:
+          SAMPLES: ${{ inputs.samples }}
+        run: |
+          set -euo pipefail
+          matrix="$(jq --compact-output --null-input --argjson samples "${SAMPLES}" '
+            [range(1; $samples + 1) as $sample |
+              {sample: $sample}]
+          ')"
+          printf 'matrix=%s\n' "${matrix}" >> "${GITHUB_OUTPUT}"
+
+  setup-skrog:
+    name: Setup Skrog (sample ${{ matrix.sample }})
+    needs: prepare-matrix
+    runs-on: windows-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.prepare-matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Skrog
+        id: setup_skrog
+        uses: ./
+        with:
+          version: ${{ inputs.version }}
