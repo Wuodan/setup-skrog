@@ -10,9 +10,9 @@ branding:
 
 inputs:
   version:
-    description: 'Skrog release to install (e.g. 0.4.1). "latest" resolves the newest release.'
+    description: 'Skrog release to install or "latest".'
     required: false
-    default: 'latest'
+    default: "0.9.0" # renovate: datasource=github-releases depName=wslkit/skrog versioning=semver
   lockfile:
     description: 'Path to a skrog.lock that pins the engine (install --locked). Empty auto-detects ./skrog.lock.'
     required: false
