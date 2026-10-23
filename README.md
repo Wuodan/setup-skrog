@@ -10,7 +10,7 @@ you did not schedule, and the same pinned engine your developers run.
 ```yaml
 - uses: wslkit/setup-skrog@v1
   with:
-    version: 0.10.0
+    version: 0.9.0
 - run: docker run --rm hello-world
 ```
 
@@ -43,7 +43,7 @@ Self-hosted runners also need a logged-on session for WSL2 — see
 
 | Input | Default | What it does |
 | --- | --- | --- |
-| `version` | `0.10.0`<!-- renovate: datasource=github-releases depName=wslkit/skrog versioning=semver --> | Skrog release to install, e.g. `0.10.0` or `latest`. |
+| `version` | `0.9.0`<!-- renovate: datasource=github-releases depName=wslkit/skrog versioning=semver --> | Skrog release to install, e.g. `0.9.0` or `latest`. |
 | `lockfile` | `` | Path to a `skrog.lock` (auto-detects `./skrog.lock`) |
 | `install` | `true` | Install and start the engine; `false` stages `skrog.exe` only |
 | `install-args` | `` | Extra `skrog install` arguments |
