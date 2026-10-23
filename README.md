@@ -10,7 +10,7 @@ you did not schedule, and the same pinned engine your developers run.
 ```yaml
 - uses: wslkit/setup-skrog@v1
   with:
-    version: 0.10.0
+    version: 0.9.0
 - run: docker run --rm hello-world
 ```
 
