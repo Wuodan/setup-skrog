@@ -7,22 +7,30 @@
       "customType": "regex",
       "managerFilePatterns": ["/^action\\.ya?ml$/"],
       "matchStrings": [
-        "default:[ \\t]*[\\\"'`]?(?<currentValue>[^\\s\\\"'`]+)[\\\"'`]?[ \\t]*# renovate: datasource=(?<datasource>github-releases) depName=(?<depName>wslkit/skrog) versioning=(?<versioning>semver)"
+        "default:[ \\t]*[\\\"'`]?(?<currentValue>[^\\s\\\"'`]+)[\\\"'`]?[ \\t]*# renovate: datasource=(?<datasource>github-releases) depName=(?<depName>Wuodan/skrog) versioning=(?<versioning>semver)"
       ]
     },
     {
       "customType": "regex",
       "managerFilePatterns": ["/^README\\.md$/"],
       "matchStrings": [
-        "<!-- renovate-code-example: datasource=(?<datasource>github-releases) depName=(?<depName>wslkit/skrog) versioning=(?<versioning>semver) -->[\\s\\S]{0,250}?\\bversion:[ \\t]*[\\\"'`]?(?<currentValue>[^\\s\\\"'`]+)"
+        "<!-- renovate-code-example: datasource=(?<datasource>github-releases) depName=(?<depName>Wuodan/skrog) versioning=(?<versioning>semver) -->[\\s\\S]{0,250}?\\bversion:[ \\t]*[\\\"'`]?(?<currentValue>[^\\s\\\"'`]+)"
       ]
     },
     {
       "customType": "regex",
       "managerFilePatterns": ["/^README\\.md$/"],
       "matchStrings": [
-        "[\\\"'`]?(?<currentValue>[^\\s\\\"'`]+)[\\\"'`]?[ \\t]*<!-- renovate: datasource=(?<datasource>github-releases) depName=(?<depName>wslkit/skrog) versioning=(?<versioning>semver) -->"
+        "[\\\"'`]?(?<currentValue>[^\\s\\\"'`]+)[\\\"'`]?[ \\t]*<!-- renovate: datasource=(?<datasource>github-releases) depName=(?<depName>Wuodan/skrog) versioning=(?<versioning>semver) -->"
       ]
+    }
+  ],
+  "packageRules": [
+    {
+      "matchDatasources": ["github-releases"],
+      "matchPackageNames": ["Wuodan/skrog"],
+      "ignoreUnstable": false,
+      "respectLatest": true
     }
   ]
 }
