@@ -6,10 +6,11 @@ against the release's `SHA256SUMS`, and wait for the engine to answer. One line
 replaces Docker Desktop on the runner: no per-runner license, no auto-updates
 you did not schedule, and the same pinned engine your developers run.
 
+<!-- renovate-code-example: datasource=github-releases depName=wslkit/skrog versioning=semver -->
 ```yaml
 - uses: wslkit/setup-skrog@v1
   with:
-    version: 0.3.0            # or omit: "latest"
+    version: 0.10.0
 - run: docker run --rm hello-world
 ```
 
@@ -42,7 +43,7 @@ Self-hosted runners also need a logged-on session for WSL2 — see
 
 | Input | Default | What it does |
 | --- | --- | --- |
-| `version` | `latest` | Skrog release to install, e.g. `0.3.0` |
+| `version` | `0.10.0`<!-- renovate: datasource=github-releases depName=wslkit/skrog versioning=semver --> | Skrog release to install, e.g. `0.10.0` or `latest`. |
 | `lockfile` | `` | Path to a `skrog.lock` (auto-detects `./skrog.lock`) |
 | `install` | `true` | Install and start the engine; `false` stages `skrog.exe` only |
 | `install-args` | `` | Extra `skrog install` arguments |
@@ -75,7 +76,7 @@ same parameters as the inputs above (`-Version`, `-Lockfile`, `-Install`,
 
 ## What the action does, precisely
 
-1. Resolves the release (or uses the pinned version).
+1. Resolves the selected release.
 2. Downloads `skrog_<version>_windows_<arch>.zip` and `SHA256SUMS` from the
    GitHub release and **refuses on any checksum mismatch**.
 3. Extracts, puts `skrog.exe` on `PATH`, exports `SKROG_HOME`.
