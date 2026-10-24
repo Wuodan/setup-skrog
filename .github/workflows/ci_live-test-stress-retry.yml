@@ -1,0 +1,150 @@
+name: "CI: setup-skrog stress test with retry"
+run-name: "Skrog ${{ inputs.version }} retry stress test (${{ inputs.samples }} samples)"
+
+"on":
+  workflow_dispatch:
+    inputs:
+      samples:
+        description: Number of setup-skrog attempts to run (max 256)
+        required: false
+        default: 256
+        type: number
+      version:
+        description: Skrog release version to install
+        required: false
+        default: "0.10.0"
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow_ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare-matrix:
+    name: Prepare stress-test matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate.outputs.matrix }}
+    steps:
+      - name: Generate test matrix
+        id: generate
+        env:
+          SAMPLES: ${{ inputs.samples }}
+        run: |
+          set -euo pipefail
+          matrix="$(jq --compact-output --null-input --argjson samples "${SAMPLES}" '
+            {
+              include: [
+                range(1; $samples + 1) as $sample |
+                {
+                  sample: $sample,
+                  initial_job_name: "Setup Skrog (sample \($sample))",
+                  retry_job_name: "Setup Skrog retry (sample \($sample))"
+                }
+              ]
+            }
+          ')"
+          printf 'matrix=%s\n' "${matrix}" >> "${GITHUB_OUTPUT}"
+
+  setup-skrog:
+    name: ${{ matrix.initial_job_name }}
+    needs: prepare-matrix
+    runs-on: windows-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare-matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Skrog
+        id: setup_skrog
+        uses: ./
+        with:
+          version: ${{ inputs.version }}
+
+  collect-cancelled-samples:
+    name: Collect cancelled samples
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    needs: [prepare-matrix, setup-skrog]
+    outputs:
+      matrix: ${{ steps.collect.outputs.matrix }}
+      has_retries: ${{ steps.collect.outputs.has_retries }}
+    steps:
+      - id: collect
+        name: Build retry matrix
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ORIGINAL_MATRIX: ${{ needs.prepare-matrix.outputs.matrix }}
+        run: |
+          set -euo pipefail
+          jobs="$(
+            gh api --paginate \
+              "/repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs?filter=latest&per_page=100" |
+              jq -s '{jobs: [.[].jobs[]]}'
+          )"
+          matrix="$(
+            jq -cn --argjson original_matrix "$ORIGINAL_MATRIX" --argjson jobs "$jobs" '
+              {
+                include: [
+                  $original_matrix.include[] |
+                  . as $entry |
+                  select(
+                    [
+                      $jobs.jobs[] |
+                      select(
+                        .name == $entry.initial_job_name and
+                        .conclusion == "cancelled"
+                      )
+                    ] | length == 1
+                  ) |
+                  $entry
+                ]
+              }
+            '
+          )"
+          printf 'matrix=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
+          printf 'has_retries=%s\n' "$(jq -r '.include | length > 0' <<< "$matrix")" >> "$GITHUB_OUTPUT"
+
+  setup-skrog-retry:
+    name: ${{ matrix.retry_job_name }}
+    if: ${{ always() && needs.collect-cancelled-samples.outputs.has_retries == 'true' }}
+    needs: collect-cancelled-samples
+    runs-on: windows-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.collect-cancelled-samples.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Skrog
+        id: setup_skrog
+        uses: ./
+        with:
+          version: ${{ inputs.version }}
+
+  required-status-checks:
+    name: Required Status Checks
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    needs:
+      - prepare-matrix
+      - setup-skrog
+      - collect-cancelled-samples
+      - setup-skrog-retry
+    steps:
+      - name: Check stress-test job results
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          jq --exit-status \
+            'all(to_entries[]; .value.result == "success" or .value.result == "skipped" or
+              (.key == "setup-skrog" and .value.result == "cancelled"))' \
+            <<< "$NEEDS"
